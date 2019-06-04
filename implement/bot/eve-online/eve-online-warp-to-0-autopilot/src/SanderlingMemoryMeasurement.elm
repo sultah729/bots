@@ -21,7 +21,12 @@ type alias MemoryMeasurementReducedWithNamedNodes =
     { shipUi : Maybe MemoryMeasurementShipUi
     , infoPanelRoute : Maybe MemoryMeasurementInfoPanelRoute
     , menus : List MemoryMeasurementMenu
+    , windowStation : List WindowStation
     }
+
+
+type alias WindowStation =
+    UIElement
 
 
 type alias MemoryMeasurementMenu =
@@ -85,11 +90,12 @@ parseMemoryMeasurementReducedWithNamedNodesFromJson =
 
 memoryMeasurementReducedWithNamedNodesJsonDecoder : Json.Decode.Decoder MemoryMeasurementReducedWithNamedNodes
 memoryMeasurementReducedWithNamedNodesJsonDecoder =
-    Json.Decode.map3 MemoryMeasurementReducedWithNamedNodes
+    Json.Decode.map4 MemoryMeasurementReducedWithNamedNodes
         -- TODO: Consider treating 'null' value like field is not present, to avoid breakage when server encodes fiels with 'null' values too.
         (Json.Decode.Extra.optionalField "ShipUi" shipUIDecoder)
         (Json.Decode.Extra.optionalField "InfoPanelRoute" infoPanelRouteDecoder)
         (Json.Decode.Extra.optionalField "Menu" (Json.Decode.list menuDecoder) |> Json.Decode.map (Maybe.withDefault []))
+        (Json.Decode.maybe (Json.Decode.field "WindowStation" (Json.Decode.list uiElementDecoder)) |> Json.Decode.map (Maybe.withDefault []))
 
 
 shipUIDecoder : Json.Decode.Decoder MemoryMeasurementShipUi

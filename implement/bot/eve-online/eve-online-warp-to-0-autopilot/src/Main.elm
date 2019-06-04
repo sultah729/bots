@@ -75,9 +75,15 @@ botRequestsFromGameClientState memoryMeasurement =
         Just infoPanelRouteFirstMarker ->
             case memoryMeasurement.shipUi of
                 Nothing ->
-                    ( [ TakeMemoryMeasurementAfterDelayInMilliseconds 4000 ]
-                    , "I cannot see if the ship is warping or jumping. I wait for the ship UI to appear on the screen."
-                    )
+                    if memoryMeasurement |> isCharDocked then
+                        ( [ TakeMemoryMeasurementAfterDelayInMilliseconds 4000 ]
+                        , "I see the ship or char is docked. I wait until undocked."
+                        )
+
+                    else
+                        ( [ TakeMemoryMeasurementAfterDelayInMilliseconds 4000 ]
+                        , "I cannot see if the ship is warping or jumping. I wait for the ship UI to appear on the screen."
+                        )
 
                 Just shipUi ->
                     if shipUi |> isShipWarpingOrJumping then
@@ -159,6 +165,11 @@ isShipWarpingOrJumping =
             )
         -- If the ship is just floating in space, there might be no indication displayed.
         >> Maybe.withDefault False
+
+
+isCharDocked : MemoryMeasurement -> Bool
+isCharDocked reducedMemoryMeasurement =
+    reducedMemoryMeasurement.windowStation |> List.isEmpty |> not
 
 
 type alias InterfaceBotState =
