@@ -137,15 +137,7 @@ botRequestsWhenNotWaitingForShipManeuver parsedUserInterface infoPanelRouteFirst
             let
                 maybeMenuEntryToClick =
                     firstMenu.entries
-                        |> List.filter
-                            (\menuEntry ->
-                                let
-                                    textLowercase =
-                                        menuEntry.text |> String.toLower
-                                in
-                                (textLowercase |> String.contains "dock")
-                                    || (textLowercase |> String.contains "jump")
-                            )
+                        |> List.filter (.text >> String.toLower >> String.contains "jump")
                         |> List.head
             in
             case maybeMenuEntryToClick of
