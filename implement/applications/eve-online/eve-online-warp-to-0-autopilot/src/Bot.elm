@@ -129,25 +129,21 @@ botRequestsWhenNotWaitingForShipManeuver parsedUserInterface infoPanelRouteFirst
             , "I click on the route marker in the info panel to open the menu."
             )
     in
-    case parsedUserInterface.contextMenus |> List.head of
+    case parsedUserInterface |> menuEntryToJumpFromParsedUserInterface of
         Nothing ->
             openMenuAnnouncementAndEffect
 
-        Just firstMenu ->
-            let
-                maybeMenuEntryToClick =
-                    firstMenu.entries
-                        |> List.filter (.text >> String.toLower >> String.contains "jump")
-                        |> List.head
-            in
-            case maybeMenuEntryToClick of
-                Nothing ->
-                    openMenuAnnouncementAndEffect
+        Just menuEntryToClick ->
+            ( [ EffectOnGameClientWindow (effectMouseClickAtLocation MouseButtonLeft (menuEntryToClick.uiNode.totalDisplayRegion |> centerFromDisplayRegion)) ]
+            , "I click on the menu entry '" ++ menuEntryToClick.text ++ "' to start the next ship maneuver."
+            )
 
-                Just menuEntryToClick ->
-                    ( [ EffectOnGameClientWindow (effectMouseClickAtLocation MouseButtonLeft (menuEntryToClick.uiNode.totalDisplayRegion |> centerFromDisplayRegion)) ]
-                    , "I click on the menu entry '" ++ menuEntryToClick.text ++ "' to start the next ship maneuver."
-                    )
+
+menuEntryToJumpFromParsedUserInterface : EveOnline.MemoryReading.ParsedUserInterface -> Maybe EveOnline.MemoryReading.ContextMenuEntry
+menuEntryToJumpFromParsedUserInterface =
+    .contextMenus
+        >> List.head
+        >> Maybe.andThen (.entries >> List.filter (.text >> String.toLower >> String.contains "jump") >> List.head)
 
 
 infoPanelRouteFirstMarkerFromParsedUserInterface : ParsedUserInterface -> Maybe InfoPanelRouteRouteElementMarker
