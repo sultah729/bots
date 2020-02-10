@@ -1,4 +1,4 @@
-{- Tribal Wars 2 farmbot version 2020-01-30
+{- Tribal Wars 2 farmbot version 2020-01-30 + more cycles
    I search for barbarian villages around your villages and then attack them.
 
    When starting, I first open a new web browser window. This might take more on the first run because I need to download the web browser software.
@@ -39,7 +39,7 @@ import WebBrowser.BotFramework as BotFramework exposing (BotEvent, BotResponse)
 
 maximumNumberOfFarmCycles : Int
 maximumNumberOfFarmCycles =
-    1
+    99
 
 
 farmCycleBreakLengthMinMinutes : Int
