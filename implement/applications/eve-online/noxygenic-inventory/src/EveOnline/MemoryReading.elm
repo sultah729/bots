@@ -41,6 +41,7 @@ module EveOnline.MemoryReading exposing
     , centerFromDisplayRegion
     , countDescendantsInUITreeNode
     , decodeMemoryReadingFromString
+    , getAllContainedDisplayTexts
     , getDisplayText
     , getHorizontalOffsetFromParentAndWidth
     , getMostPopulousDescendantMatchingPredicate
