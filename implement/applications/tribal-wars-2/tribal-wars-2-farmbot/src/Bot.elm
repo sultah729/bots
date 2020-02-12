@@ -1,4 +1,9 @@
-{- Tribal Wars 2 farmbot version 2020-01-30 + more cycles
+{- Tribal Wars 2 farmbot version for Harkum 2020-02-12
+
+   Adapted configuration for https://forum.botengine.org/t/farm-manager-tribal-wars-2-farmbot/3038/24?u=viir
+   + more cycles
+   + breaks reduced to 20 - 40 minutes
+
    I search for barbarian villages around your villages and then attack them.
 
    When starting, I first open a new web browser window. This might take more on the first run because I need to download the web browser software.
@@ -44,12 +49,12 @@ maximumNumberOfFarmCycles =
 
 farmCycleBreakLengthMinMinutes : Int
 farmCycleBreakLengthMinMinutes =
-    120
+    20 
 
 
 farmCycleBreakLengthMaxMinutes : Int
 farmCycleBreakLengthMaxMinutes =
-    180
+    40
 
 
 farmArmyPresetNamePattern : String
