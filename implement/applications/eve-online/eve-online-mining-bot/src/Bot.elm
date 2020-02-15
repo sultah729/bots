@@ -33,6 +33,7 @@ import EveOnline.MemoryReading
         , OverviewWindow
         , OverviewWindowEntry
         , ParsedUserInterface
+        , ShipUI
         , ShipUIModule
         , centerFromDisplayRegion
         , maybeNothingFromCanNotSeeIt
@@ -45,6 +46,11 @@ import Set
 runAwayShieldHitpointsThresholdPercent : Int
 runAwayShieldHitpointsThresholdPercent =
     50
+
+
+enterCombatShieldHitpointsThresholdPercent : Int
+enterCombatShieldHitpointsThresholdPercent =
+    99
 
 
 type alias UIElement =
@@ -106,11 +112,16 @@ decideNextAction botMemory parsedUserInterface =
                 DescribeBranch "I see no ship UI, assume we are docked." (decideNextActionWhenDocked parsedUserInterface)
 
             CanSee shipUI ->
-                if shipUI.hitpointsPercent.shield < runAwayShieldHitpointsThresholdPercent then
-                    DescribeBranch "Shield hitpoints are too low, run away." (runAway parsedUserInterface)
+                case parsedUserInterface.overviewWindow of
+                    CanNotSeeIt ->
+                        DescribeBranch "I see no overview window, wait until undocking completed." (EndDecisionPath Wait)
 
-                else
-                    DescribeBranch "I see we are in space." (decideNextActionWhenInSpace botMemory parsedUserInterface)
+                    CanSee overviewWindow ->
+                        if shipUI.hitpointsPercent.shield < runAwayShieldHitpointsThresholdPercent then
+                            DescribeBranch "Shield hitpoints are too low, run away." (runAway parsedUserInterface)
+
+                        else
+                            DescribeBranch "I see we are in space." (decideNextActionWhenInSpace botMemory shipUI overviewWindow parsedUserInterface)
 
 
 decideNextActionWhenDocked : ParsedUserInterface -> DecisionPathNode
@@ -161,8 +172,22 @@ decideNextActionWhenDocked parsedUserInterface =
                         )
 
 
-decideNextActionWhenInSpace : BotMemory -> ParsedUserInterface -> DecisionPathNode
-decideNextActionWhenInSpace botMemory parsedUserInterface =
+decideNextActionWhenInSpace : BotMemory -> ShipUI -> OverviewWindow -> ParsedUserInterface -> DecisionPathNode
+decideNextActionWhenInSpace botMemory shipUI overviewWindow parsedUserInterface =
+    let
+        mineAsteroidsDecision =
+            mineAsteroids botMemory
+    in
+    if shipUI.hitpointsPercent.shield <= enterCombatShieldHitpointsThresholdPercent then
+        DescribeBranch "Shield hitpoints are low enough to enter defense."
+            (combat botMemory overviewWindow parsedUserInterface mineAsteroidsDecision)
+
+    else
+        mineAsteroidsDecision parsedUserInterface
+
+
+mineAsteroids : BotMemory -> ParsedUserInterface -> DecisionPathNode
+mineAsteroids botMemory parsedUserInterface =
     case parsedUserInterface |> oreHoldFillPercent of
         Nothing ->
             DescribeBranch "I cannot see the ore hold capacity gauge." (EndDecisionPath Wait)
