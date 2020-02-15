@@ -180,7 +180,7 @@ decideNextActionWhenInSpace botMemory parsedUserInterface =
                 DescribeBranch "The ore hold is not full enough yet. Get more ore."
                     (case parsedUserInterface.targets |> List.head of
                         Nothing ->
-                            DescribeBranch "I see no locked target." (decideNextActionAcquireLockedTarget parsedUserInterface)
+                            DescribeBranch "I see no locked target." (acquireLockedTargetForMining parsedUserInterface)
 
                         Just _ ->
                             DescribeBranch "I see a locked target."
@@ -202,15 +202,15 @@ decideNextActionWhenInSpace botMemory parsedUserInterface =
                     )
 
 
-decideNextActionAcquireLockedTarget : ParsedUserInterface -> DecisionPathNode
-decideNextActionAcquireLockedTarget parsedUserInterface =
+acquireLockedTargetForMining : ParsedUserInterface -> DecisionPathNode
+acquireLockedTargetForMining parsedUserInterface =
     case parsedUserInterface |> topmostAsteroidFromOverviewWindow of
         Nothing ->
             DescribeBranch "I see no asteroid in the overview. Warp to mining site."
                 (warpToMiningSite parsedUserInterface)
 
         Just asteroidInOverview ->
-            if asteroidInOverview |> overviewWindowEntryIsInRange |> Maybe.withDefault False then
+            if asteroidInOverview |> overviewWindowEntryIsInMiningRange |> Maybe.withDefault False then
                 DescribeBranch "Asteroid is in range. Lock target."
                     (EndDecisionPath
                         (Act
@@ -554,8 +554,8 @@ topmostAsteroidFromOverviewWindow =
         >> List.head
 
 
-overviewWindowEntryIsInRange : OverviewWindowEntry -> Maybe Bool
-overviewWindowEntryIsInRange =
+overviewWindowEntryIsInMiningRange : OverviewWindowEntry -> Maybe Bool
+overviewWindowEntryIsInMiningRange =
     .distanceInMeters >> Result.map (\distanceInMeters -> distanceInMeters < 1000) >> Result.toMaybe
 
 
