@@ -1,4 +1,5 @@
-{- Michaels EVE Online mining bot version 2020-02-14
+{- EVE Online mining bot version 2020-02-14 variant for ByteSmarter
+   As desribed by ByteSmarter on Discord.
 
    The bot warps to an asteroid belt, mines there until the ore hold is full, and then docks at a station to unload the ore. It then repeats this cycle until you stop it.
    It remembers the station in which it was last docked, and docks again at the same station.
@@ -38,6 +39,11 @@ import EveOnline.MemoryReading
         , maybeVisibleAndThen
         )
 import EveOnline.VolatileHostInterface as VolatileHostInterface exposing (MouseButton(..), effectMouseClickAtLocation)
+
+
+runAwayShieldHitpointsThresholdPercent : Int
+runAwayShieldHitpointsThresholdPercent =
+    60
 
 
 type alias UIElement =
@@ -92,12 +98,18 @@ decideNextAction botMemory parsedUserInterface =
         -- TODO: Look also on the previous memory reading.
         DescribeBranch "I see we are warping." (EndDecisionPath Wait)
 
-    else if parsedUserInterface.overviewWindow == CanNotSeeIt then
-        DescribeBranch "I see no overview window, assume we are docked." (decideNextActionWhenDocked parsedUserInterface)
-
     else
         -- TODO: For robustness, also look also on the previous memory reading. Only continue when both indicate is undocked.
-        DescribeBranch "I see we are in space." (decideNextActionWhenInSpace botMemory parsedUserInterface)
+        case parsedUserInterface.shipUI of
+            CanNotSeeIt ->
+                DescribeBranch "I see no ship UI, assume we are docked." (decideNextActionWhenDocked parsedUserInterface)
+
+            CanSee shipUI ->
+                if shipUI.hitpointsPercent.shield < runAwayShieldHitpointsThresholdPercent then
+                    DescribeBranch "Shield hitpoints are too low, run away." (runAway parsedUserInterface)
+
+                else
+                    DescribeBranch "I see we are in space." (decideNextActionWhenInSpace botMemory parsedUserInterface)
 
 
 decideNextActionWhenDocked : ParsedUserInterface -> DecisionPathNode
@@ -230,6 +242,43 @@ decideNextActionAcquireLockedTarget parsedUserInterface =
                             }
                         )
                     )
+
+
+runAway : ParsedUserInterface -> DecisionPathNode
+runAway parsedUserInterface =
+    case parsedUserInterface.infoPanelLocationInfo of
+        CanNotSeeIt ->
+            DescribeBranch "I cannot see the location info panel." (EndDecisionPath Wait)
+
+        CanSee infoPanelLocationInfo ->
+            EndDecisionPath
+                (Act
+                    { firstAction = infoPanelLocationInfo.listSurroundingsButton |> clickOnUIElement MouseButtonLeft
+                    , followingSteps =
+                        [ ( "Click on menu entry 'planets'."
+                          , lastContextMenuOrSubmenu
+                                >> Maybe.andThen (menuEntryContainingTextIgnoringCase "planets")
+                                >> Maybe.map (.uiNode >> clickOnUIElement MouseButtonLeft)
+                          )
+                        , ( "Click on one of the menu entries."
+                          , lastContextMenuOrSubmenu
+                                >> Maybe.andThen
+                                    (.entries >> listElementAtWrappedIndex (getEntropyIntFromUserInterface parsedUserInterface))
+                                >> Maybe.map (.uiNode >> clickOnUIElement MouseButtonLeft)
+                          )
+                        , ( "Click menu entry 'Warp to Within'"
+                          , lastContextMenuOrSubmenu
+                                >> Maybe.andThen (menuEntryContainingTextIgnoringCase "Warp to Within")
+                                >> Maybe.map (.uiNode >> clickOnUIElement MouseButtonLeft)
+                          )
+                        , ( "Click menu entry 'Within 0 m'"
+                          , lastContextMenuOrSubmenu
+                                >> Maybe.andThen (menuEntryContainingTextIgnoringCase "Within 0 m")
+                                >> Maybe.map (.uiNode >> clickOnUIElement MouseButtonLeft)
+                          )
+                        ]
+                    }
+                )
 
 
 dockToStation : { stationNameFromInfoPanel : String } -> ParsedUserInterface -> DecisionPathNode
