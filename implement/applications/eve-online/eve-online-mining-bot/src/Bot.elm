@@ -420,37 +420,8 @@ combat botMemory overviewWindow parsedUserInterface continueIfCombatComplete =
 
                 Just _ ->
                     DescribeBranch "I see a locked target."
-                        (case parsedUserInterface |> shipUIModulesToActivateOnTarget |> List.filter (.isActive >> Maybe.withDefault False >> not) |> List.head of
-                            -- TODO: Check previous memory reading too for module activity.
-                            Nothing ->
-                                DescribeBranch "All attack modules are active."
-                                    (launchAndEngageDrones parsedUserInterface
-                                        |> Maybe.withDefault
-                                            (DescribeBranch "No idling drones."
-                                                (if maxTargetCount <= (parsedUserInterface.targets |> List.length) then
-                                                    DescribeBranch "Enough locked targets." (EndDecisionPath Wait)
-
-                                                 else
-                                                    case overviewEntriesToLock of
-                                                        [] ->
-                                                            DescribeBranch "I see no more overview entries to lock." (EndDecisionPath Wait)
-
-                                                        nextOverviewEntryToLock :: _ ->
-                                                            DescribeBranch "Lock more targets."
-                                                                (decideNextActionAcquireLockedTarget nextOverviewEntryToLock)
-                                                )
-                                            )
-                                    )
-
-                            Just inactiveModule ->
-                                DescribeBranch "I see an inactive module to activate on targets. Click on it to activate."
-                                    (EndDecisionPath
-                                        (Act
-                                            { firstAction = inactiveModule.uiNode |> clickOnUIElement MouseButtonLeft
-                                            , followingSteps = []
-                                            }
-                                        )
-                                    )
+                        (launchAndEngageDrones parsedUserInterface
+                            |> Maybe.withDefault (DescribeBranch "No idling drones." (EndDecisionPath Wait))
                         )
 
 
