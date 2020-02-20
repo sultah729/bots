@@ -1,4 +1,4 @@
-{- EVE Online anomaly ratting bot version 2020-02-18
+{- EVE Online anomaly ratting bot version 2020-02-20
 
    Setup instructions for the EVE Online client:
    + Set the UI language to English.
@@ -22,6 +22,7 @@ module Bot exposing
     )
 
 import BotEngine.Interface_To_Host_20200213 as InterfaceToHost
+import Dict
 import EveOnline.BotFramework exposing (BotEffect(..), getEntropyIntFromUserInterface)
 import EveOnline.MemoryReading
     exposing
@@ -37,11 +38,6 @@ import EveOnline.MemoryReading
         )
 import EveOnline.VolatileHostInterface as VolatileHostInterface exposing (MouseButton(..), effectMouseClickAtLocation)
 import Set
-
-
-attackMaxRange : Int
-attackMaxRange =
-    18000
 
 
 maxTargetCount : Int
@@ -400,37 +396,20 @@ returnDronesToBay parsedUserInterface =
 
 lockTargetFromOverviewEntry : OverviewWindowEntry -> DecisionPathNode
 lockTargetFromOverviewEntry overviewEntry =
-    if overviewEntry |> overviewWindowEntryIsInRange |> Maybe.withDefault False then
-        DescribeBranch "Overview entry is in range. Lock target."
-            (EndDecisionPath
-                (Act
-                    { firstAction = overviewEntry.uiNode |> clickOnUIElement MouseButtonRight
-                    , followingSteps =
-                        [ ( "Click menu entry 'lock'."
-                          , lastContextMenuOrSubmenu
-                                >> Maybe.andThen (menuEntryMatchingTextIgnoringCase "lock target")
-                                >> Maybe.map (.uiNode >> clickOnUIElement MouseButtonLeft)
-                          )
-                        ]
-                    }
-                )
+    DescribeBranch ("Lock target from overview entry '" ++ (overviewEntry.cellsTexts |> Dict.get "Name" |> Maybe.withDefault "") ++ "'")
+        (EndDecisionPath
+            (Act
+                { firstAction = overviewEntry.uiNode |> clickOnUIElement MouseButtonRight
+                , followingSteps =
+                    [ ( "Click menu entry 'lock'."
+                      , lastContextMenuOrSubmenu
+                            >> Maybe.andThen (menuEntryMatchingTextIgnoringCase "lock target")
+                            >> Maybe.map (.uiNode >> clickOnUIElement MouseButtonLeft)
+                      )
+                    ]
+                }
             )
-
-    else
-        DescribeBranch "Overview entry is not in range. Approach."
-            (EndDecisionPath
-                (Act
-                    { firstAction = overviewEntry.uiNode |> clickOnUIElement MouseButtonRight
-                    , followingSteps =
-                        [ ( "Click menu entry 'approach'."
-                          , lastContextMenuOrSubmenu
-                                >> Maybe.andThen (menuEntryContainingTextIgnoringCase "approach")
-                                >> Maybe.map (.uiNode >> clickOnUIElement MouseButtonLeft)
-                          )
-                        ]
-                    }
-                )
-            )
+        )
 
 
 initState : State
@@ -673,11 +652,6 @@ menuEntryMatchingTextIgnoringCase textToSearch =
 lastContextMenuOrSubmenu : ParsedUserInterface -> Maybe EveOnline.MemoryReading.ContextMenu
 lastContextMenuOrSubmenu =
     .contextMenus >> List.head
-
-
-overviewWindowEntryIsInRange : OverviewWindowEntry -> Maybe Bool
-overviewWindowEntryIsInRange =
-    .distanceInMeters >> Result.map (\distanceInMeters -> distanceInMeters < attackMaxRange) >> Result.toMaybe
 
 
 clickOnUIElement : MouseButton -> UIElement -> VolatileHostInterface.EffectOnWindowStructure
