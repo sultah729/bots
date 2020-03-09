@@ -1,4 +1,4 @@
-{- Michaels EVE Online mining bot version 2020-02-15
+{- EVE Online mining bot version 2020-02-15 - 2020-03-09 TheRealManiac - point 2
 
    The bot warps to an asteroid belt, mines there until the ore hold is full, and then docks at a station to unload the ore. It then repeats this cycle until you stop it.
    It remembers the station in which it was last docked, and docks again at the same station.
@@ -255,18 +255,22 @@ acquireLockedTargetForMining parsedUserInterface =
 
             else
                 DescribeBranch "Asteroid is not in range. Approach."
-                    (EndDecisionPath
-                        (Act
-                            { firstAction = asteroidInOverview.uiNode |> clickOnUIElement MouseButtonRight
-                            , followingSteps =
-                                [ ( "Click menu entry 'approach'."
-                                  , lastContextMenuOrSubmenu
-                                        >> Maybe.andThen (menuEntryContainingTextIgnoringCase "approach")
-                                        >> Maybe.map (.uiNode >> clickOnUIElement MouseButtonLeft)
-                                  )
-                                ]
-                            }
-                        )
+                    (if parsedUserInterface |> isShipApproaching then
+                        DescribeBranch "record the approach click, and send the bot in a wait loop" (EndDecisionPath Wait)
+
+                     else
+                        EndDecisionPath
+                            (Act
+                                { firstAction = asteroidInOverview.uiNode |> clickOnUIElement MouseButtonRight
+                                , followingSteps =
+                                    [ ( "Click menu entry 'approach'."
+                                      , lastContextMenuOrSubmenu
+                                            >> Maybe.andThen (menuEntryContainingTextIgnoringCase "approach")
+                                            >> Maybe.map (.uiNode >> clickOnUIElement MouseButtonLeft)
+                                      )
+                                    ]
+                                }
+                            )
                     )
 
 
@@ -883,6 +887,17 @@ isShipWarpingOrJumping =
                 [ EveOnline.MemoryReading.ManeuverWarp, EveOnline.MemoryReading.ManeuverJump ]
                     |> List.member maneuverType
             )
+        -- If the ship is just floating in space, there might be no indication displayed.
+        >> Maybe.withDefault False
+
+
+isShipApproaching : ParsedUserInterface -> Bool
+isShipApproaching =
+    .shipUI
+        >> maybeNothingFromCanNotSeeIt
+        >> Maybe.andThen (.indication >> maybeNothingFromCanNotSeeIt)
+        >> Maybe.andThen (.maneuverType >> maybeNothingFromCanNotSeeIt)
+        >> Maybe.map ((==) EveOnline.MemoryReading.ManeuverApproach)
         -- If the ship is just floating in space, there might be no indication displayed.
         >> Maybe.withDefault False
 
