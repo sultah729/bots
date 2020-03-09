@@ -1,4 +1,4 @@
-{- EVE Online mining bot version 2020-02-15 - 2020-03-09 TheRealManiac - point 2
+{- EVE Online mining bot version 2020-02-15 - 2020-03-09 TheRealManiac - point 3
 
    The bot warps to an asteroid belt, mines there until the ore hold is full, and then docks at a station to unload the ore. It then repeats this cycle until you stop it.
    It remembers the station in which it was last docked, and docks again at the same station.
@@ -229,6 +229,19 @@ mineAsteroids botMemory parsedUserInterface =
                     )
 
 
+{-| Ctrl+Space
+-}
+stopShipAction : TreeLeafAct
+stopShipAction =
+    { firstAction = VolatileHostInterface.KeyDown VolatileHostInterface.VK_CONTROL
+    , followingSteps =
+        [ ( "SPACE down", always (Just (VolatileHostInterface.KeyDown (VolatileHostInterface.VirtualKeyCodeFromInt 0x20))) )
+        , ( "SPACE up", always (Just (VolatileHostInterface.KeyUp (VolatileHostInterface.VirtualKeyCodeFromInt 0x20))) )
+        , ( "CTRL up", always (Just (VolatileHostInterface.KeyUp VolatileHostInterface.VK_CONTROL)) )
+        ]
+    }
+
+
 acquireLockedTargetForMining : ParsedUserInterface -> DecisionPathNode
 acquireLockedTargetForMining parsedUserInterface =
     case parsedUserInterface |> topmostAsteroidFromOverviewWindow of
@@ -238,20 +251,25 @@ acquireLockedTargetForMining parsedUserInterface =
 
         Just asteroidInOverview ->
             if asteroidInOverview |> overviewWindowEntryIsInMiningRange |> Maybe.withDefault False then
-                DescribeBranch "Asteroid is in range. Lock target."
-                    (EndDecisionPath
-                        (Act
-                            { firstAction = asteroidInOverview.uiNode |> clickOnUIElement MouseButtonRight
-                            , followingSteps =
-                                [ ( "Click menu entry 'lock'."
-                                  , lastContextMenuOrSubmenu
-                                        >> Maybe.andThen (menuEntryContainingTextIgnoringCase "lock")
-                                        >> Maybe.map (.uiNode >> clickOnUIElement MouseButtonLeft)
-                                  )
-                                ]
-                            }
+                if parsedUserInterface |> isShipApproaching then
+                    DescribeBranch "if the ship reached the target range, it will be usefull to stop the ship"
+                        (EndDecisionPath (Act stopShipAction))
+
+                else
+                    DescribeBranch "Asteroid is in range. Lock target."
+                        (EndDecisionPath
+                            (Act
+                                { firstAction = asteroidInOverview.uiNode |> clickOnUIElement MouseButtonRight
+                                , followingSteps =
+                                    [ ( "Click menu entry 'lock'."
+                                      , lastContextMenuOrSubmenu
+                                            >> Maybe.andThen (menuEntryContainingTextIgnoringCase "lock")
+                                            >> Maybe.map (.uiNode >> clickOnUIElement MouseButtonLeft)
+                                      )
+                                    ]
+                                }
+                            )
                         )
-                    )
 
             else
                 DescribeBranch "Asteroid is not in range. Approach."
