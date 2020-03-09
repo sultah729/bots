@@ -1,4 +1,4 @@
-{- Michaels EVE Online mining bot version 2020-02-15
+{- EVE Online mining bot version 2020-02-15 TheRealManiac point 1
 
    The bot warps to an asteroid belt, mines there until the ore hold is full, and then docks at a station to unload the ore. It then repeats this cycle until you stop it.
    It remembers the station in which it was last docked, and docks again at the same station.
@@ -289,20 +289,8 @@ acquireLockedTargetForCombat overviewEntry =
             )
 
     else
-        DescribeBranch "Overview entry is not in range. Approach."
-            (EndDecisionPath
-                (Act
-                    { firstAction = overviewEntry.uiNode |> clickOnUIElement MouseButtonRight
-                    , followingSteps =
-                        [ ( "Click menu entry 'approach'."
-                          , lastContextMenuOrSubmenu
-                                >> Maybe.andThen (menuEntryContainingTextIgnoringCase "approach")
-                                >> Maybe.map (.uiNode >> clickOnUIElement MouseButtonLeft)
-                          )
-                        ]
-                    }
-                )
-            )
+        DescribeBranch "Overview entry is not in locking range. Wait that the NPC came to my range"
+            (EndDecisionPath Wait)
 
 
 dockToStation : { stationNameFromInfoPanel : String } -> ParsedUserInterface -> DecisionPathNode
@@ -801,7 +789,7 @@ overviewWindowEntryIsInMiningRange =
 
 overviewWindowEntryIsInCombatRange : OverviewWindowEntry -> Maybe Bool
 overviewWindowEntryIsInCombatRange =
-    .distanceInMeters >> Result.map (\distanceInMeters -> distanceInMeters < 5000) >> Result.toMaybe
+    .distanceInMeters >> Result.map (\distanceInMeters -> distanceInMeters < 25000) >> Result.toMaybe
 
 
 overviewWindowEntriesRepresentingAsteroids : ParsedUserInterface -> List OverviewWindowEntry
