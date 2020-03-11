@@ -1,4 +1,6 @@
-{- Michaels EVE Online mining bot version 2020-02-15
+{- Michaels EVE Online mining bot version 2020-02-15 - 2020-03-11 TheRealManiac defense
+   Variant 2020-03-11 for TheRealManiac from https://forum.botengine.org/t/mining-bot-question-and-hints/3140/4?u=viir
+   > if the shild reach the defense value and the drones Activated, it is usefull, to activate the Defense Modules in row 3.
 
    The bot warps to an asteroid belt, mines there until the ore hold is full, and then docks at a station to unload the ore. It then repeats this cycle until you stop it.
    It remembers the station in which it was last docked, and docks again at the same station.
@@ -446,7 +448,27 @@ combat botMemory overviewWindow parsedUserInterface continueIfCombatComplete =
                 Just _ ->
                     DescribeBranch "I see a locked target."
                         (launchAndEngageDrones parsedUserInterface
-                            |> Maybe.withDefault (DescribeBranch "No idling drones." (EndDecisionPath Wait))
+                            |> Maybe.withDefault
+                                (DescribeBranch "No idling drones. if the shild reach the defense value and the drones Activated, it is usefull, to activate the Defense Modules in row 3."
+                                    (let
+                                        defenseModules =
+                                            parsedUserInterface |> shipUiModulesRows |> List.drop 2 |> List.head |> Maybe.withDefault []
+                                     in
+                                     case defenseModules |> List.filter (.isActive >> Maybe.withDefault False >> not) |> List.head of
+                                        Nothing ->
+                                            DescribeBranch "All defense modules are active." (EndDecisionPath Wait)
+
+                                        Just inactiveModule ->
+                                            DescribeBranch "I see an inactive defense module. Click on it to activate."
+                                                (EndDecisionPath
+                                                    (Act
+                                                        { firstAction = inactiveModule.uiNode |> clickOnUIElement MouseButtonLeft
+                                                        , followingSteps = []
+                                                        }
+                                                    )
+                                                )
+                                    )
+                                )
                         )
 
 
