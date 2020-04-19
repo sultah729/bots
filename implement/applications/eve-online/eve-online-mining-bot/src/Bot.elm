@@ -570,10 +570,16 @@ lockTargetFromOverviewEntryAndStopShip overviewEntry =
                         >> Maybe.andThen (menuEntryWithTextEqualsIgnoringCase "Lock target")
                         >> Maybe.map (.uiNode >> clickOnUIElement MouseButtonLeft >> List.singleton)
                   )
-                , ( "CTRL down", always (Just [ VolatileHostInterface.KeyDown VolatileHostInterface.VK_CONTROL ]) )
-                , ( "SPACE down", always (Just [ VolatileHostInterface.KeyDown (VolatileHostInterface.VirtualKeyCodeFromInt 0x20) ]) )
-                , ( "SPACE up", always (Just [ VolatileHostInterface.KeyUp (VolatileHostInterface.VirtualKeyCodeFromInt 0x20) ]) )
-                , ( "CTRL up", always (Just [ VolatileHostInterface.KeyUp VolatileHostInterface.VK_CONTROL ]) )
+                , ( "Press CTRL and SPACE keys."
+                  , always
+                        (Just
+                            [ VolatileHostInterface.KeyDown VolatileHostInterface.VK_CONTROL
+                            , VolatileHostInterface.KeyDown (VolatileHostInterface.VirtualKeyCodeFromInt 0x20)
+                            , VolatileHostInterface.KeyUp (VolatileHostInterface.VirtualKeyCodeFromInt 0x20)
+                            , VolatileHostInterface.KeyUp VolatileHostInterface.VK_CONTROL
+                            ]
+                        )
+                  )
                 ]
             )
         )
