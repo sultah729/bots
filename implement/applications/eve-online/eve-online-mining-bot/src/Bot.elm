@@ -565,20 +565,19 @@ lockTargetFromOverviewEntryAndStopShip overviewEntry =
     DescribeBranch ("Lock target from overview entry '" ++ (overviewEntry.objectName |> Maybe.withDefault "") ++ "'")
         (EndDecisionPath
             (actStartingWithRightClickOnOverviewEntry overviewEntry
-                [ ( "Click menu entry 'Lock target'."
+                [ ( "Click menu entry 'Lock target'. Then press CTRL and SPACE keys."
                   , lastContextMenuOrSubmenu
                         >> Maybe.andThen (menuEntryWithTextEqualsIgnoringCase "Lock target")
-                        >> Maybe.map (.uiNode >> clickOnUIElement MouseButtonLeft >> List.singleton)
-                  )
-                , ( "Press CTRL and SPACE keys."
-                  , always
-                        (Just
-                            [ VolatileHostInterface.KeyDown VolatileHostInterface.VK_CONTROL
-                            , VolatileHostInterface.KeyDown (VolatileHostInterface.VirtualKeyCodeFromInt 0x20)
-                            , VolatileHostInterface.KeyUp (VolatileHostInterface.VirtualKeyCodeFromInt 0x20)
-                            , VolatileHostInterface.KeyUp VolatileHostInterface.VK_CONTROL
-                            ]
-                        )
+                        >> Maybe.map (.uiNode >> clickOnUIElement MouseButtonLeft)
+                        >> Maybe.map
+                            (\partToClickOnTheMenuEntry ->
+                                [ partToClickOnTheMenuEntry
+                                , VolatileHostInterface.KeyDown VolatileHostInterface.VK_CONTROL
+                                , VolatileHostInterface.KeyDown (VolatileHostInterface.VirtualKeyCodeFromInt 0x20)
+                                , VolatileHostInterface.KeyUp (VolatileHostInterface.VirtualKeyCodeFromInt 0x20)
+                                , VolatileHostInterface.KeyUp VolatileHostInterface.VK_CONTROL
+                                ]
+                            )
                   )
                 ]
             )
