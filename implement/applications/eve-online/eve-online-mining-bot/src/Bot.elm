@@ -1,4 +1,4 @@
-{- EVE Online mining bot version 2020-04-18
+{- EVE Online mining bot version 2020-04-18 - 2020-04-19 Couladin Stop Ship
 
    The bot warps to an asteroid belt, mines there until the ore hold is full, and then docks at a station to unload the ore. It then repeats this cycle until you stop it.
    It remembers the station in which it was last docked, and docks again at the same station.
@@ -540,7 +540,7 @@ lockTargetFromOverviewEntryAndEnsureIsInRange rangeInMeters overviewEntry =
 
                 else
                     DescribeBranch "Object is in range. Lock target."
-                        (lockTargetFromOverviewEntry overviewEntry)
+                        (lockTargetFromOverviewEntryAndStopShip overviewEntry)
 
             else
                 DescribeBranch ("Object is not in range (" ++ (distanceInMeters |> String.fromInt) ++ " meters away). Approach.")
@@ -560,8 +560,8 @@ lockTargetFromOverviewEntryAndEnsureIsInRange rangeInMeters overviewEntry =
             DescribeBranch ("Failed to read the distance: " ++ error) (EndDecisionPath Wait)
 
 
-lockTargetFromOverviewEntry : OverviewWindowEntry -> DecisionPathNode
-lockTargetFromOverviewEntry overviewEntry =
+lockTargetFromOverviewEntryAndStopShip : OverviewWindowEntry -> DecisionPathNode
+lockTargetFromOverviewEntryAndStopShip overviewEntry =
     DescribeBranch ("Lock target from overview entry '" ++ (overviewEntry.objectName |> Maybe.withDefault "") ++ "'")
         (EndDecisionPath
             (actStartingWithRightClickOnOverviewEntry overviewEntry
@@ -570,6 +570,10 @@ lockTargetFromOverviewEntry overviewEntry =
                         >> Maybe.andThen (menuEntryWithTextEqualsIgnoringCase "Lock target")
                         >> Maybe.map (.uiNode >> clickOnUIElement MouseButtonLeft >> List.singleton)
                   )
+                , ( "CTRL down", always (Just (VolatileHostInterface.KeyDown VolatileHostInterface.VK_CONTROL)) )
+                , ( "SPACE down", always (Just (VolatileHostInterface.KeyDown (VolatileHostInterface.VirtualKeyCodeFromInt 0x20))) )
+                , ( "SPACE up", always (Just (VolatileHostInterface.KeyUp (VolatileHostInterface.VirtualKeyCodeFromInt 0x20))) )
+                , ( "CTRL up", always (Just (VolatileHostInterface.KeyUp VolatileHostInterface.VK_CONTROL)) )
                 ]
             )
         )
