@@ -93,9 +93,10 @@ parseBotSettings =
          , ( "last-docked-station-name-from-info-panel"
            , AppSettings.ValueTypeString (\stationName -> \settings -> { settings | lastDockedStationNameFromInfoPanel = Just stationName })
            )
-         , ( "ore-hold-max-percent"
+        {- , ( "ore-hold-max-percent"
            , AppSettings.ValueTypeInteger (\percent settings -> { settings | oreHoldMaxPercent = percent })
            )
+          -}
          ]
             |> Dict.fromList
         )
